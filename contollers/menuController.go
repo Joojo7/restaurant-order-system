@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
@@ -74,60 +73,6 @@ func GetMenu(response http.ResponseWriter, request *http.Request) {
 	// response.Write(jsonBytes)
 }
 
-//CreateMenu for creating menus
-func CreateMenu(response http.ResponseWriter, request *http.Request) {
-	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
-	bodyBytes, err := ioutil.ReadAll(request.Body)
-	defer request.Body.Close()
-	if err != nil {
-		response.WriteHeader(http.StatusInternalServerError)
-		response.Write([]byte(err.Error()))
-	}
-
-	contentType := request.Header.Get("Content-type")
-
-	if contentType != "application/json" {
-		response.WriteHeader(http.StatusUnsupportedMediaType)
-		response.Write([]byte(fmt.Sprintf("need content-type 'application/json' but got '%s'", contentType)))
-		defer cancel()
-
-		return
-	}
-
-	var menu models.Menu
-	err = json.Unmarshal(bodyBytes, &menu)
-	fmt.Print(bodyBytes)
-	fmt.Print(menu)
-	if err != nil {
-		response.WriteHeader(http.StatusBadRequest)
-		response.Write([]byte(err.Error()))
-	}
-
-	// startDate, err := time.Parse("2006-01-02 15:04", menu.sta)
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// menu.Start_Date = startDate
-
-	var Start_Date, _ = time.Parse(time.RFC3339, menu.Start_Date.Format(time.RFC3339))
-	// menu.Start_Date = Start_Date.String()
-	menu.Start_Date, _ = time.Parse(time.RFC3339, Start_Date.Format(time.RFC3339))
-	var End_Date, _ = time.Parse(time.RFC3339, menu.End_Date.Format(time.RFC3339))
-	menu.End_Date = End_Date
-	// menu.End_Date = End_Date.Format(time.RFC3339)
-
-	menu.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-	menu.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-	menu.ID = primitive.NewObjectID()
-	menu.MenuID = menu.ID.Hex()
-
-	result, _ := menuCollection.InsertOne(ctx, menu)
-	defer cancel()
-	json.NewEncoder(response).Encode(result)
-
-}
-
 //-----------------------------------------------------------------------------------------------api to post
 // func UpdateMenu(response http.ResponseWriter, request *http.Request, ctx context.Context, cancel context.CancelFunc) {
 // 	body, err := ioutil.ReadAll(request.Body)
@@ -174,3 +119,33 @@ func CreateMenu(response http.ResponseWriter, request *http.Request) {
 // 	json.NewEncoder(response).Encode(result)
 
 // }
+
+//CreateMenu for creating menus
+func CreateMenu(response http.ResponseWriter, request *http.Request) {
+	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+
+	// check for content type existence and check for json validity
+	ContentTypeValidator(response, request)
+
+	// call MaxRequestValidator to enforce a maximum read of 1MB .
+	dec := MaxRequestValidator(response, request)
+
+	var menu models.Menu
+	err := dec.Decode(&menu)
+
+	if PostPatchRequestValidator(response, request, err) {
+		menu.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+		menu.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+		menu.ID = primitive.NewObjectID()
+		menu.Menu_id = menu.ID.Hex()
+
+		result, _ := menuCollection.InsertOne(ctx, menu)
+		defer cancel()
+
+		fmt.Print(menu.Start_Date.Format(time.RFC3339))
+
+		fmt.Fprintf(response, "menu: %+v", result)
+	}
+	defer cancel()
+
+}
