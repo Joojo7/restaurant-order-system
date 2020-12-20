@@ -12,6 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	database "newapi.com/m/database"
 	models "newapi.com/m/models"
 )
@@ -28,6 +29,7 @@ func GetMenus(response http.ResponseWriter, request *http.Request) {
 	response.Header().Add("Content-Type", "application/json")
 
 	result, err := menuCollection.Find(context.TODO(), bson.M{})
+	fmt.Print(result)
 
 	defer cancel()
 	if err != nil {
@@ -73,52 +75,73 @@ func GetMenu(response http.ResponseWriter, request *http.Request) {
 	// response.Write(jsonBytes)
 }
 
-//-----------------------------------------------------------------------------------------------api to post
-// func UpdateMenu(response http.ResponseWriter, request *http.Request, ctx context.Context, cancel context.CancelFunc) {
-// 	body, err := ioutil.ReadAll(request.Body)
+func inTimeSpan(start, end, check time.Time) bool {
+	return start.After(time.Now()) && end.After(start)
+}
 
-// 	var translatedBody models.Menu
-// 	err = json.Unmarshal(body, &translatedBody)
-// 	var updateObj primitive.M
+//UpdateMenu is used to update menus
+func UpdateMenu(response http.ResponseWriter, request *http.Request) {
+	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
-// 	if translatedBody.Title == "" && translatedBody.Text == "" {
-// 		response.Write([]byte(fmt.Sprintln("Sorry no input inserted")))
-// 		return
-// 	}
+	// check for content type existence and check for json validity
+	ContentTypeValidator(response, request)
 
-// 	translatedBody.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+	// call MaxRequestValidator to enforce a maximum read of 1MB .
+	dec := MaxRequestValidator(response, request)
 
-// 	if translatedBody.Text != "" {
-// 		updateObj = bson.M{"text": translatedBody.Text, "updated_at": translatedBody.Updated_at}
-// 	}
+	var menu models.Menu
+	err := dec.Decode(&menu)
+	PostPatchRequestValidator(response, request, err)
 
-// 	if translatedBody.Title != "" {
-// 		updateObj = bson.M{"title": translatedBody.Title, "updated_at": translatedBody.Updated_at}
-// 	}
+	params := mux.Vars(request)
+	filter := bson.M{"menu_id": params["id"]}
 
-// 	params := mux.Vars(request)
-// 	filter := bson.M{"menu_id": params["id"]}
+	var updateObj primitive.D
 
-// 	update := bson.M{
-// 		"$set": updateObj,
-// 	}
+	if !inTimeSpan(menu.Start_Date, menu.End_Date, time.Now()) {
+		msg := "Kindly retype the time"
+		http.Error(response, msg, http.StatusUnsupportedMediaType)
+		defer cancel()
+		return
+	}
+	updateObj = append(updateObj, bson.E{"start_date", menu.Start_Date})
+	updateObj = append(updateObj, bson.E{"end_date", menu.End_Date})
 
-// 	upsert := true
-// 	after := options.After
-// 	opt := options.FindOneAndUpdateOptions{
-// 		ReturnDocument: &after,
-// 		Upsert:         &upsert,
-// 	}
+	if menu.Name != "" {
+		updateObj = append(updateObj, bson.E{"name", menu.Name})
 
-// 	result := menuCollection.FindOneAndUpdate(ctx, filter, update, &opt)
-// 	if result.Err() != nil {
-// 		response.WriteHeader(http.StatusInternalServerError)
-// 		response.Write([]byte(err.Error()))
-// 	}
+	}
 
-// 	json.NewEncoder(response).Encode(result)
+	if menu.Category != "" {
+		updateObj = append(updateObj, bson.E{"category", menu.Category})
+	}
 
-// }
+	menu.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+
+	upsert := true
+	opt := options.UpdateOptions{
+		Upsert: &upsert,
+	}
+
+	result, err := menuCollection.UpdateOne(
+		ctx,
+		filter,
+		bson.D{
+			{"$set", updateObj},
+		},
+		&opt,
+	)
+	if err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		response.Write([]byte(err.Error()))
+	}
+
+	defer cancel()
+
+	response.Header().Add("Content-Type", "application/json")
+	json.NewEncoder(response).Encode(result)
+
+}
 
 //CreateMenu for creating menus
 func CreateMenu(response http.ResponseWriter, request *http.Request) {
@@ -139,12 +162,11 @@ func CreateMenu(response http.ResponseWriter, request *http.Request) {
 		menu.ID = primitive.NewObjectID()
 		menu.Menu_id = menu.ID.Hex()
 
-		result, _ := menuCollection.InsertOne(ctx, menu)
+		menuCollection.InsertOne(ctx, menu)
 		defer cancel()
 
-		fmt.Print(menu.Start_Date.Format(time.RFC3339))
-
-		fmt.Fprintf(response, "menu: %+v", result)
+		response.Header().Add("Content-Type", "application/json")
+		json.NewEncoder(response).Encode(menu)
 	}
 	defer cancel()
 

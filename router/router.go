@@ -12,7 +12,7 @@ func Routes(incomingRoutes *mux.Router) {
 
 	incomingRoutes.HandleFunc("/menus", MenuController.GetMenus).Methods("GET")
 	incomingRoutes.HandleFunc("/menus/{id}", MenuController.GetMenu).Methods("GET")
-	// incomingRoutes.HandleFunc("/menus/{id}", MenuController.UpdateMenu).Methods("PATCH")
+	incomingRoutes.HandleFunc("/menus/{id}", MenuController.UpdateMenu).Methods("PATCH")
 	incomingRoutes.HandleFunc("/menus", MenuController.CreateMenu).Methods("POST")
 
 }
