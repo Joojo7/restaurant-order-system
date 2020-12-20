@@ -1,2 +1,2 @@
 # restaurant-order-system
-Server-side application ordering and managing restaurant food orders
+Server-side application for managing restaurant food orders
