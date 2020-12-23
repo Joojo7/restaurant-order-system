@@ -7,10 +7,14 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"reflect"
 	"strings"
 
+	"github.com/go-playground/validator"
 	"github.com/golang/gddo/httputil/header"
 )
+
+var v *validator.Validate = validator.New()
 
 //PostPatchRequestValidator for creating menus
 func PostPatchRequestValidator(response http.ResponseWriter, request *http.Request, err error) bool {
@@ -137,4 +141,28 @@ func SingleJsonValidator(response http.ResponseWriter, request *http.Request, er
 		return false
 	}
 	return true
+}
+
+func BodyValidator(model interface{}, response http.ResponseWriter, request *http.Request) bool {
+
+	//validate existence if request body
+
+	if v.Struct(model) != nil {
+
+		response.Write([]byte(fmt.Sprintf(v.Struct(&model).Error())))
+		return false
+	}
+	return true
+}
+
+func IsNilFixed(i interface{}) bool {
+	fmt.Print(i)
+	if i == nil {
+		return true
+	}
+	switch reflect.TypeOf(i).Kind() {
+	case reflect.Ptr, reflect.Map, reflect.Array, reflect.Chan, reflect.Slice:
+		return reflect.ValueOf(i).IsNil()
+	}
+	return false
 }

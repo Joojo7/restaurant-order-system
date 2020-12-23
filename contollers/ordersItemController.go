@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -12,44 +13,47 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"gopkg.in/go-playground/validator.v9"
 	database "newapi.com/m/database"
 	helpers "newapi.com/m/helpers"
 	models "newapi.com/m/models"
 )
 
 // connect to the database
+var v *validator.Validate = validator.New()
 
-//get menuCollection
-var menuCollection *mongo.Collection = database.OpenCollection(database.Client, "menu")
+//get orderItemCollection
+var orderItemCollection *mongo.Collection = database.OpenCollection(database.Client, "orderItem")
 
-//GetMenus is the api used to get a multiple menus
-func GetMenus(response http.ResponseWriter, request *http.Request) {
+//GetOrderItems is the api used to get a multiple orderItems
+func GetOrderItems(response http.ResponseWriter, request *http.Request) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 	response.Header().Add("Content-Type", "application/json")
 
-	result, err := menuCollection.Find(context.TODO(), bson.M{})
+	result, err := orderItemCollection.Find(context.TODO(), bson.M{})
+	fmt.Print(result)
 
 	defer cancel()
 	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		response.Write([]byte(err.Error()))
 	}
-	var allMenus []bson.M
-	if err = result.All(ctx, &allMenus); err != nil {
+	var allOrderItems []bson.M
+	if err = result.All(ctx, &allOrderItems); err != nil {
 		log.Fatal(err)
 	}
 
 	response.Header().Add("Content-Type", "application/json")
 	response.WriteHeader(http.StatusOK)
 
-	json.NewEncoder(response).Encode(allMenus)
+	json.NewEncoder(response).Encode(allOrderItems)
 
 	// response.Write(jsonBytes)
 }
 
-//GetMenu is the api used to tget a single menu
-func GetMenu(response http.ResponseWriter, request *http.Request) {
+//GetOrderItem is the api used to tget a single orderItem
+func GetOrderItem(response http.ResponseWriter, request *http.Request) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 	response.Header().Add("Content-Type", "application/json")
@@ -58,9 +62,9 @@ func GetMenu(response http.ResponseWriter, request *http.Request) {
 
 	// id, _ := primitive.ObjectIDFromHex(params["id"])
 
-	var menu models.Menu
+	var orderItem models.OrderItem
 
-	err := menuCollection.FindOne(ctx, bson.M{"menu_id": params["id"]}).Decode(&menu)
+	err := orderItemCollection.FindOne(ctx, bson.M{"orderItem_id": params["id"]}).Decode(&orderItem)
 	defer cancel()
 	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
@@ -69,17 +73,13 @@ func GetMenu(response http.ResponseWriter, request *http.Request) {
 
 	response.Header().Add("Content-Type", "application/json")
 
-	json.NewEncoder(response).Encode(menu)
+	json.NewEncoder(response).Encode(orderItem)
 
 	// response.Write(jsonBytes)
 }
 
-func inTimeSpan(start, end, check time.Time) bool {
-	return start.After(time.Now()) && end.After(start)
-}
-
-//UpdateMenu is used to update menus
-func UpdateMenu(response http.ResponseWriter, request *http.Request) {
+//UpdateOrderItem is used to update orderItems
+func UpdateOrderItem(response http.ResponseWriter, request *http.Request) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 	// check for content type existence and check for json validity
@@ -88,41 +88,27 @@ func UpdateMenu(response http.ResponseWriter, request *http.Request) {
 	// call MaxRequestValidator to enforce a maximum read of 1MB .
 	dec := helpers.MaxRequestValidator(response, request)
 
-	var menu models.Menu
-	err := dec.Decode(&menu)
+	var orderItem models.OrderItem
+	err := dec.Decode(&orderItem)
 	helpers.PostPatchRequestValidator(response, request, err)
 
 	params := mux.Vars(request)
-	filter := bson.M{"menu_id": params["id"]}
+	filter := bson.M{"orderItem_id": params["id"]}
 
 	var updateObj primitive.D
 
-	if !inTimeSpan(menu.Start_Date, menu.End_Date, time.Now()) {
-		msg := "Kindly retype the time"
-		http.Error(response, msg, http.StatusUnsupportedMediaType)
-		defer cancel()
-		return
-	}
-	updateObj = append(updateObj, bson.E{"start_date", menu.Start_Date})
-	updateObj = append(updateObj, bson.E{"end_date", menu.End_Date})
-
-	if menu.Name != "" {
-		updateObj = append(updateObj, bson.E{"name", menu.Name})
-
+	if orderItem.Unit_price != nil {
+		updateObj = append(updateObj, bson.E{"price", orderItem.Unit_price})
 	}
 
-	if menu.Category != "" {
-		updateObj = append(updateObj, bson.E{"category", menu.Category})
-	}
-
-	menu.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+	orderItem.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 
 	upsert := true
 	opt := options.UpdateOptions{
 		Upsert: &upsert,
 	}
 
-	result, err := menuCollection.UpdateOne(
+	result, err := orderItemCollection.UpdateOne(
 		ctx,
 		filter,
 		bson.D{
@@ -142,9 +128,14 @@ func UpdateMenu(response http.ResponseWriter, request *http.Request) {
 
 }
 
-//CreateMenu for creating menus
-func CreateMenu(response http.ResponseWriter, request *http.Request) {
+// var validate *validator.Validate
+
+//CreateOrderItem for creating orderItems
+func CreateOrderItem(response http.ResponseWriter, request *http.Request) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+
+	//set response format to JSON
+	response.Header().Add("Content-Type", "application/json")
 
 	// check for content type existence and check for json validity
 	helpers.ContentTypeValidator(response, request)
@@ -152,8 +143,8 @@ func CreateMenu(response http.ResponseWriter, request *http.Request) {
 	// call MaxRequestValidator to enforce a maximum read of 1MB .
 	dec := helpers.MaxRequestValidator(response, request)
 
-	var menu models.Menu
-	err1 := dec.Decode(&menu)
+	var orderItem models.OrderItem
+	err1 := dec.Decode(&orderItem)
 
 	checkStructure := helpers.PostPatchRequestValidator(response, request, err1)
 
@@ -161,22 +152,25 @@ func CreateMenu(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	checkBody := helpers.BodyValidator(&menu, response, request)
+	checkBody := helpers.BodyValidator(&orderItem, response, request)
 
 	if !checkBody {
 		return
 	}
 
-	menu.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-	menu.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-	menu.ID = primitive.NewObjectID()
-	menu.Menu_id = menu.ID.Hex()
+	//validate body structure
 
-	menuCollection.InsertOne(ctx, menu)
+	orderItem.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+	orderItem.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+	orderItem.ID = primitive.NewObjectID()
+	orderItem.Order_item_id = orderItem.ID.Hex()
+	var num = toFixed(*orderItem.Unit_price, 2)
+	orderItem.Unit_price = &num
+
+	orderItemCollection.InsertOne(ctx, orderItem)
 	defer cancel()
 
-	response.Header().Add("Content-Type", "application/json")
-	json.NewEncoder(response).Encode(menu)
+	json.NewEncoder(response).Encode(orderItem)
 
 	defer cancel()
 

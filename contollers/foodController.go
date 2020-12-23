@@ -14,14 +14,10 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"gopkg.in/go-playground/validator.v9"
 	database "newapi.com/m/database"
 	helpers "newapi.com/m/helpers"
 	models "newapi.com/m/models"
 )
-
-// connect to the database
-var v *validator.Validate = validator.New()
 
 //get foodCollection
 var foodCollection *mongo.Collection = database.OpenCollection(database.Client, "food")
@@ -134,8 +130,6 @@ func UpdateFood(response http.ResponseWriter, request *http.Request) {
 
 }
 
-// var validate *validator.Validate
-
 //CreateFood for creating foods
 func CreateFood(response http.ResponseWriter, request *http.Request) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
@@ -158,22 +152,32 @@ func CreateFood(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	//validate body structure
-	if helpers.PostPatchRequestValidator(response, request, err1) {
-		food.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-		food.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-		food.ID = primitive.NewObjectID()
-		food.Food_id = food.ID.Hex()
-		var num = toFixed(*food.Price, 2)
-		food.Price = &num
+	checkStructure := helpers.PostPatchRequestValidator(response, request, err1)
 
-		fmt.Print(&food)
-
-		foodCollection.InsertOne(ctx, food)
-		defer cancel()
-
-		json.NewEncoder(response).Encode(food)
+	if !checkStructure {
+		return
 	}
+
+	checkBody := helpers.BodyValidator(&food, response, request)
+
+	if !checkBody {
+		return
+	}
+
+	//validate body structure
+
+	food.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+	food.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+	food.ID = primitive.NewObjectID()
+	food.Food_id = food.ID.Hex()
+	var num = toFixed(*food.Price, 2)
+	food.Price = &num
+
+	foodCollection.InsertOne(ctx, food)
+	defer cancel()
+
+	json.NewEncoder(response).Encode(food)
+
 	defer cancel()
 
 }
