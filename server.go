@@ -20,9 +20,12 @@ func main() {
 	port := myEnv["PORT"]
 
 	myRouter := mux.NewRouter().StrictSlash(true)
+
+	// ROuter files
 	router.Routes(myRouter)
 	router.FoodRoutes(myRouter)
 	router.OrderItemRoutes(myRouter)
+	router.TableRoutes(myRouter)
 
 	fmt.Printf("listening on %v \n", port)
 	error1 := http.ListenAndServe(port, myRouter)

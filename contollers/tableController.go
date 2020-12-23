@@ -13,47 +13,44 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"gopkg.in/go-playground/validator.v9"
 	database "newapi.com/m/database"
 	helpers "newapi.com/m/helpers"
 	models "newapi.com/m/models"
 )
 
 // connect to the database
-var v *validator.Validate = validator.New()
 
-//get orderItemCollection
-var orderItemCollection *mongo.Collection = database.OpenCollection(database.Client, "orderItem")
+//get tableCollection
+var tableCollection *mongo.Collection = database.OpenCollection(database.Client, "table")
 
-//GetOrderItems is the api used to get a multiple orderItems
-func GetOrderItems(response http.ResponseWriter, request *http.Request) {
+//GetTables is the api used to get a multiple tables
+func GetTables(response http.ResponseWriter, request *http.Request) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 	response.Header().Add("Content-Type", "application/json")
 
-	result, err := orderItemCollection.Find(context.TODO(), bson.M{})
-	fmt.Print(result)
+	result, err := tableCollection.Find(context.TODO(), bson.M{})
 
 	defer cancel()
 	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		response.Write([]byte(err.Error()))
 	}
-	var allOrderItems []bson.M
-	if err = result.All(ctx, &allOrderItems); err != nil {
+	var allTables []bson.M
+	if err = result.All(ctx, &allTables); err != nil {
 		log.Fatal(err)
 	}
 
 	response.Header().Add("Content-Type", "application/json")
 	response.WriteHeader(http.StatusOK)
 
-	json.NewEncoder(response).Encode(allOrderItems)
+	json.NewEncoder(response).Encode(allTables)
 
 	// response.Write(jsonBytes)
 }
 
-//GetOrderItem is the api used to tget a single orderItem
-func GetOrderItem(response http.ResponseWriter, request *http.Request) {
+//GetTable is the api used to tget a single table
+func GetTable(response http.ResponseWriter, request *http.Request) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 	response.Header().Add("Content-Type", "application/json")
@@ -62,9 +59,9 @@ func GetOrderItem(response http.ResponseWriter, request *http.Request) {
 
 	// id, _ := primitive.ObjectIDFromHex(params["id"])
 
-	var orderItem models.OrderItem
+	var table models.Table
 
-	err := orderItemCollection.FindOne(ctx, bson.M{"orderItem_id": params["id"]}).Decode(&orderItem)
+	err := tableCollection.FindOne(ctx, bson.M{"table_id": params["id"]}).Decode(&table)
 	defer cancel()
 	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
@@ -73,13 +70,13 @@ func GetOrderItem(response http.ResponseWriter, request *http.Request) {
 
 	response.Header().Add("Content-Type", "application/json")
 
-	json.NewEncoder(response).Encode(orderItem)
+	json.NewEncoder(response).Encode(table)
 
 	// response.Write(jsonBytes)
 }
 
-//UpdateOrderItem is used to update orderItems
-func UpdateOrderItem(response http.ResponseWriter, request *http.Request) {
+//UpdateTable is used to update tables
+func UpdateTable(response http.ResponseWriter, request *http.Request) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 	// check for content type existence and check for json validity
@@ -88,38 +85,36 @@ func UpdateOrderItem(response http.ResponseWriter, request *http.Request) {
 	// call MaxRequestValidator to enforce a maximum read of 1MB .
 	dec := helpers.MaxRequestValidator(response, request)
 
-	var orderItem models.OrderItem
-	err := dec.Decode(&orderItem)
+	var table models.Table
+	err := dec.Decode(&table)
 	helpers.PostPatchRequestValidator(response, request, err)
 
 	params := mux.Vars(request)
-	filter := bson.M{"order_item_id": params["id"]}
+	filter := bson.M{"table_id": params["id"]}
 
 	var updateObj primitive.D
 
-	if orderItem.Unit_price != nil {
-
-		updateObj = append(updateObj, bson.E{"unit_price", *orderItem.Unit_price})
+	if table.Number_of_guests != nil {
+		updateObj = append(updateObj, bson.E{"number_of_guests", table.Number_of_guests})
 
 	}
 
-	if orderItem.Quantity != nil {
-		updateObj = append(updateObj, bson.E{"quantity", *orderItem.Quantity})
+	if table.Table_number != nil {
+		updateObj = append(updateObj, bson.E{"table_number", table.Table_number})
 	}
 
-	if orderItem.Food_id != nil {
-		updateObj = append(updateObj, bson.E{"food_id", *orderItem.Food_id})
+	if table.Order_id != nil {
+		updateObj = append(updateObj, bson.E{"order_id", table.Order_id})
 	}
 
-	orderItem.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-	updateObj = append(updateObj, bson.E{"updated_at", orderItem.Updated_at})
+	table.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 
 	upsert := true
 	opt := options.UpdateOptions{
 		Upsert: &upsert,
 	}
 
-	result, err := orderItemCollection.UpdateOne(
+	result, err := tableCollection.UpdateOne(
 		ctx,
 		filter,
 		bson.D{
@@ -141,8 +136,8 @@ func UpdateOrderItem(response http.ResponseWriter, request *http.Request) {
 
 // var validate *validator.Validate
 
-//CreateOrderItem for creating orderItems
-func CreateOrderItem(response http.ResponseWriter, request *http.Request) {
+//CreateTable for creating tables
+func CreateTable(response http.ResponseWriter, request *http.Request) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 	//set response format to JSON
@@ -154,8 +149,8 @@ func CreateOrderItem(response http.ResponseWriter, request *http.Request) {
 	// call MaxRequestValidator to enforce a maximum read of 1MB .
 	dec := helpers.MaxRequestValidator(response, request)
 
-	var orderItem models.OrderItem
-	err1 := dec.Decode(&orderItem)
+	var table models.Table
+	err1 := dec.Decode(&table)
 
 	//validate body structure
 	if !helpers.PostPatchRequestValidator(response, request, err1) {
@@ -164,24 +159,20 @@ func CreateOrderItem(response http.ResponseWriter, request *http.Request) {
 
 	//validate existence if request body
 
-	if v.Struct(&orderItem) != nil {
-		response.Write([]byte(fmt.Sprintf(v.Struct(&orderItem).Error())))
+	if v.Struct(&table) != nil {
+		response.Write([]byte(fmt.Sprintf(v.Struct(&table).Error())))
 		return
 	}
-	//validate body structure
 
-	orderItem.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-	orderItem.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-	orderItem.ID = primitive.NewObjectID()
-	orderItem.Order_item_id = orderItem.ID.Hex()
-	var num = toFixed(*orderItem.Unit_price, 2)
-	orderItem.Unit_price = &num
+	table.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+	table.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+	table.ID = primitive.NewObjectID()
+	table.Table_id = table.ID.Hex()
 
-	orderItemCollection.InsertOne(ctx, orderItem)
+	tableCollection.InsertOne(ctx, table)
 	defer cancel()
 
-	json.NewEncoder(response).Encode(orderItem)
-
+	json.NewEncoder(response).Encode(table)
 	defer cancel()
 
 }

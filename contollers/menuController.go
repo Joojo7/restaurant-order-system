@@ -98,14 +98,17 @@ func UpdateMenu(response http.ResponseWriter, request *http.Request) {
 
 	var updateObj primitive.D
 
-	if !inTimeSpan(menu.Start_Date, menu.End_Date, time.Now()) {
-		msg := "Kindly retype the time"
-		http.Error(response, msg, http.StatusUnsupportedMediaType)
-		defer cancel()
-		return
+	if menu.Start_Date != nil && menu.End_Date != nil {
+		if !inTimeSpan(*menu.Start_Date, *menu.End_Date, time.Now()) {
+			msg := "Kindly retype the time"
+			http.Error(response, msg, http.StatusUnsupportedMediaType)
+			defer cancel()
+			return
+		}
+
+		updateObj = append(updateObj, bson.E{"start_date", menu.Start_Date})
+		updateObj = append(updateObj, bson.E{"end_date", menu.End_Date})
 	}
-	updateObj = append(updateObj, bson.E{"start_date", menu.Start_Date})
-	updateObj = append(updateObj, bson.E{"end_date", menu.End_Date})
 
 	if menu.Name != "" {
 		updateObj = append(updateObj, bson.E{"name", menu.Name})
