@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math"
 	"net/http"
 	"time"
 
@@ -21,16 +20,16 @@ import (
 
 // connect to the database
 
-//get foodCollection
-var foodCollection *mongo.Collection = database.OpenCollection(database.Client, "food")
+//get orderCollection
+var orderCollection *mongo.Collection = database.OpenCollection(database.Client, "order")
 
-//GetFoods is the api used to get a multiple foods
-func GetFoods(response http.ResponseWriter, request *http.Request) {
+//GetOrders is the api used to get a multiple orders
+func GetOrders(response http.ResponseWriter, request *http.Request) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 	response.Header().Add("Content-Type", "application/json")
 
-	result, err := foodCollection.Find(context.TODO(), bson.M{})
+	result, err := orderCollection.Find(context.TODO(), bson.M{})
 	fmt.Print(result)
 
 	defer cancel()
@@ -38,21 +37,21 @@ func GetFoods(response http.ResponseWriter, request *http.Request) {
 		response.WriteHeader(http.StatusInternalServerError)
 		response.Write([]byte(err.Error()))
 	}
-	var allFoods []bson.M
-	if err = result.All(ctx, &allFoods); err != nil {
+	var allOrders []bson.M
+	if err = result.All(ctx, &allOrders); err != nil {
 		log.Fatal(err)
 	}
 
 	response.Header().Add("Content-Type", "application/json")
 	response.WriteHeader(http.StatusOK)
 
-	json.NewEncoder(response).Encode(allFoods)
+	json.NewEncoder(response).Encode(allOrders)
 
 	// response.Write(jsonBytes)
 }
 
-//GetFood is the api used to tget a single food
-func GetFood(response http.ResponseWriter, request *http.Request) {
+//GetOrder is the api used to tget a single order
+func GetOrder(response http.ResponseWriter, request *http.Request) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 	response.Header().Add("Content-Type", "application/json")
@@ -61,9 +60,9 @@ func GetFood(response http.ResponseWriter, request *http.Request) {
 
 	// id, _ := primitive.ObjectIDFromHex(params["id"])
 
-	var food models.Food
+	var order models.Order
 
-	err := foodCollection.FindOne(ctx, bson.M{"food_id": params["id"]}).Decode(&food)
+	err := orderCollection.FindOne(ctx, bson.M{"order_id": params["id"]}).Decode(&order)
 	defer cancel()
 	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
@@ -72,13 +71,13 @@ func GetFood(response http.ResponseWriter, request *http.Request) {
 
 	response.Header().Add("Content-Type", "application/json")
 
-	json.NewEncoder(response).Encode(food)
+	json.NewEncoder(response).Encode(order)
 
 	// response.Write(jsonBytes)
 }
 
-//UpdateFood is used to update foods
-func UpdateFood(response http.ResponseWriter, request *http.Request) {
+//UpdateOrder is used to update orders
+func UpdateOrder(response http.ResponseWriter, request *http.Request) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 	// check for content type existence and check for json validity
@@ -87,33 +86,28 @@ func UpdateFood(response http.ResponseWriter, request *http.Request) {
 	// call MaxRequestValidator to enforce a maximum read of 1MB .
 	dec := helpers.MaxRequestValidator(response, request)
 
-	var food models.Food
-	err := dec.Decode(&food)
+	var order models.Order
+	err := dec.Decode(&order)
 	helpers.PostPatchRequestValidator(response, request, err)
 
 	params := mux.Vars(request)
-	filter := bson.M{"food_id": params["id"]}
+	filter := bson.M{"order_id": params["id"]}
 
 	var updateObj primitive.D
 
-	if food.Name != nil {
-		updateObj = append(updateObj, bson.E{"name", food.Name})
-
+	if order.Table_id != nil {
+		updateObj = append(updateObj, bson.E{"name", order.Table_id})
 	}
 
-	if food.Price != nil {
-		updateObj = append(updateObj, bson.E{"price", food.Price})
-	}
-
-	food.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-	updateObj = append(updateObj, bson.E{"updated_at", food.Updated_at})
+	order.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+	updateObj = append(updateObj, bson.E{"updated_at", order.Updated_at})
 
 	upsert := true
 	opt := options.UpdateOptions{
 		Upsert: &upsert,
 	}
 
-	result, err := foodCollection.UpdateOne(
+	result, err := orderCollection.UpdateOne(
 		ctx,
 		filter,
 		bson.D{
@@ -135,8 +129,8 @@ func UpdateFood(response http.ResponseWriter, request *http.Request) {
 
 // var validate *validator.Validate
 
-//CreateFood for creating foods
-func CreateFood(response http.ResponseWriter, request *http.Request) {
+//CreateOrder for creating orders
+func CreateOrder(response http.ResponseWriter, request *http.Request) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 	//set response format to JSON
@@ -148,8 +142,8 @@ func CreateFood(response http.ResponseWriter, request *http.Request) {
 	// call MaxRequestValidator to enforce a maximum read of 1MB .
 	dec := helpers.MaxRequestValidator(response, request)
 
-	var food models.Food
-	err1 := dec.Decode(&food)
+	var order models.Order
+	err1 := dec.Decode(&order)
 
 	//validate body structure
 	if !helpers.PostPatchRequestValidator(response, request, err1) {
@@ -158,31 +152,20 @@ func CreateFood(response http.ResponseWriter, request *http.Request) {
 
 	//validate existence if request body
 
-	if v.Struct(&food) != nil {
-		response.Write([]byte(fmt.Sprintf(v.Struct(&food).Error())))
+	if v.Struct(&order) != nil {
+		response.Write([]byte(fmt.Sprintf(v.Struct(&order).Error())))
 		return
 	}
 
-	food.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-	food.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-	food.ID = primitive.NewObjectID()
-	food.Food_id = food.ID.Hex()
-	var num = toFixed(*food.Price, 2)
-	food.Price = &num
+	order.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+	order.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+	order.ID = primitive.NewObjectID()
+	order.Order_id = order.ID.Hex()
 
-	foodCollection.InsertOne(ctx, food)
+	orderCollection.InsertOne(ctx, order)
 	defer cancel()
 
-	json.NewEncoder(response).Encode(food)
+	json.NewEncoder(response).Encode(order)
 	defer cancel()
 
-}
-
-func round(num float64) int {
-	return int(num + math.Copysign(0.5, num))
-}
-
-func toFixed(num float64, precision int) float64 {
-	output := math.Pow(10, float64(precision))
-	return float64(round(num*output)) / output
 }
