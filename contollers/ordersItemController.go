@@ -146,18 +146,17 @@ func CreateOrderItem(response http.ResponseWriter, request *http.Request) {
 	var orderItem models.OrderItem
 	err1 := dec.Decode(&orderItem)
 
-	checkStructure := helpers.PostPatchRequestValidator(response, request, err1)
-
-	if !checkStructure {
+	//validate body structure
+	if !helpers.PostPatchRequestValidator(response, request, err1) {
 		return
 	}
 
-	checkBody := helpers.BodyValidator(&orderItem, response, request)
+	//validate existence if request body
 
-	if !checkBody {
+	if v.Struct(&orderItem) != nil {
+		response.Write([]byte(fmt.Sprintf(v.Struct(&orderItem).Error())))
 		return
 	}
-
 	//validate body structure
 
 	orderItem.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))

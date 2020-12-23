@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -155,15 +156,15 @@ func CreateMenu(response http.ResponseWriter, request *http.Request) {
 	var menu models.Menu
 	err1 := dec.Decode(&menu)
 
-	checkStructure := helpers.PostPatchRequestValidator(response, request, err1)
-
-	if !checkStructure {
+	//validate body structure
+	if !helpers.PostPatchRequestValidator(response, request, err1) {
 		return
 	}
 
-	checkBody := helpers.BodyValidator(&menu, response, request)
+	//validate existence if request body
 
-	if !checkBody {
+	if v.Struct(&menu) != nil {
+		response.Write([]byte(fmt.Sprintf(v.Struct(&menu).Error())))
 		return
 	}
 

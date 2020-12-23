@@ -143,18 +143,6 @@ func SingleJsonValidator(response http.ResponseWriter, request *http.Request, er
 	return true
 }
 
-func BodyValidator(model interface{}, response http.ResponseWriter, request *http.Request) bool {
-
-	//validate existence if request body
-
-	if v.Struct(model) != nil {
-
-		response.Write([]byte(fmt.Sprintf(v.Struct(&model).Error())))
-		return false
-	}
-	return true
-}
-
 func IsNilFixed(i interface{}) bool {
 	fmt.Print(i)
 	if i == nil {

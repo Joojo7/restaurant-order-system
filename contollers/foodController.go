@@ -19,6 +19,8 @@ import (
 	models "newapi.com/m/models"
 )
 
+// connect to the database
+
 //get foodCollection
 var foodCollection *mongo.Collection = database.OpenCollection(database.Client, "food")
 
@@ -130,6 +132,8 @@ func UpdateFood(response http.ResponseWriter, request *http.Request) {
 
 }
 
+// var validate *validator.Validate
+
 //CreateFood for creating foods
 func CreateFood(response http.ResponseWriter, request *http.Request) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
@@ -146,25 +150,17 @@ func CreateFood(response http.ResponseWriter, request *http.Request) {
 	var food models.Food
 	err1 := dec.Decode(&food)
 
+	//validate body structure
+	if !helpers.PostPatchRequestValidator(response, request, err1) {
+		return
+	}
+
 	//validate existence if request body
+
 	if v.Struct(&food) != nil {
 		response.Write([]byte(fmt.Sprintf(v.Struct(&food).Error())))
 		return
 	}
-
-	checkStructure := helpers.PostPatchRequestValidator(response, request, err1)
-
-	if !checkStructure {
-		return
-	}
-
-	checkBody := helpers.BodyValidator(&food, response, request)
-
-	if !checkBody {
-		return
-	}
-
-	//validate body structure
 
 	food.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 	food.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
@@ -177,7 +173,6 @@ func CreateFood(response http.ResponseWriter, request *http.Request) {
 	defer cancel()
 
 	json.NewEncoder(response).Encode(food)
-
 	defer cancel()
 
 }
