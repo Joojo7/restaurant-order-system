@@ -14,6 +14,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	database "newapi.com/m/database"
+	helpers "newapi.com/m/helpers"
 	models "newapi.com/m/models"
 )
 
@@ -83,14 +84,14 @@ func UpdateMenu(response http.ResponseWriter, request *http.Request) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 	// check for content type existence and check for json validity
-	ContentTypeValidator(response, request)
+	helpers.ContentTypeValidator(response, request)
 
 	// call MaxRequestValidator to enforce a maximum read of 1MB .
-	dec := MaxRequestValidator(response, request)
+	dec := helpers.MaxRequestValidator(response, request)
 
 	var menu models.Menu
 	err := dec.Decode(&menu)
-	PostPatchRequestValidator(response, request, err)
+	helpers.PostPatchRequestValidator(response, request, err)
 
 	params := mux.Vars(request)
 	filter := bson.M{"menu_id": params["id"]}
@@ -147,10 +148,10 @@ func CreateMenu(response http.ResponseWriter, request *http.Request) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 	// check for content type existence and check for json validity
-	ContentTypeValidator(response, request)
+	helpers.ContentTypeValidator(response, request)
 
 	// call MaxRequestValidator to enforce a maximum read of 1MB .
-	dec := MaxRequestValidator(response, request)
+	dec := helpers.MaxRequestValidator(response, request)
 
 	var menu models.Menu
 	err := dec.Decode(&menu)
@@ -160,7 +161,7 @@ func CreateMenu(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	if PostPatchRequestValidator(response, request, err) {
+	if helpers.PostPatchRequestValidator(response, request, err) {
 		menu.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 		menu.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 		menu.ID = primitive.NewObjectID()

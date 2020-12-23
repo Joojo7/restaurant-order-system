@@ -16,6 +16,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"gopkg.in/go-playground/validator.v9"
 	database "newapi.com/m/database"
+	helpers "newapi.com/m/helpers"
 	models "newapi.com/m/models"
 )
 
@@ -83,14 +84,14 @@ func UpdateFood(response http.ResponseWriter, request *http.Request) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 	// check for content type existence and check for json validity
-	ContentTypeValidator(response, request)
+	helpers.ContentTypeValidator(response, request)
 
 	// call MaxRequestValidator to enforce a maximum read of 1MB .
-	dec := MaxRequestValidator(response, request)
+	dec := helpers.MaxRequestValidator(response, request)
 
 	var food models.Food
 	err := dec.Decode(&food)
-	PostPatchRequestValidator(response, request, err)
+	helpers.PostPatchRequestValidator(response, request, err)
 
 	params := mux.Vars(request)
 	filter := bson.M{"food_id": params["id"]}
@@ -143,20 +144,22 @@ func CreateFood(response http.ResponseWriter, request *http.Request) {
 	response.Header().Add("Content-Type", "application/json")
 
 	// check for content type existence and check for json validity
-	ContentTypeValidator(response, request)
+	helpers.ContentTypeValidator(response, request)
 
 	// call MaxRequestValidator to enforce a maximum read of 1MB .
-	dec := MaxRequestValidator(response, request)
+	dec := helpers.MaxRequestValidator(response, request)
 
 	var food models.Food
 	err1 := dec.Decode(&food)
 
+	//validate existence if request body
 	if v.Struct(&food) != nil {
 		response.Write([]byte(fmt.Sprintf(v.Struct(&food).Error())))
 		return
 	}
 
-	if PostPatchRequestValidator(response, request, err1) {
+	//validate body structure
+	if helpers.PostPatchRequestValidator(response, request, err1) {
 		food.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 		food.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 		food.ID = primitive.NewObjectID()
@@ -172,20 +175,6 @@ func CreateFood(response http.ResponseWriter, request *http.Request) {
 		json.NewEncoder(response).Encode(food)
 	}
 	defer cancel()
-
-}
-
-func MakeMan(response http.ResponseWriter, request *http.Request) {
-
-	Email := "s"
-	a := models.Food{
-		Name: &Email,
-	}
-	err := v.Struct(a)
-
-	if err != nil {
-		response.Write([]byte(fmt.Sprintf(err.Error())))
-	}
 
 }
 
