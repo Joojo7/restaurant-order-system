@@ -14,6 +14,7 @@ import (
 
 //PostPatchRequestValidator for creating menus
 func PostPatchRequestValidator(response http.ResponseWriter, request *http.Request, err error) bool {
+	response.Header().Add("Content-Type", "application/json")
 
 	if err != nil {
 		var syntaxError *json.SyntaxError

@@ -29,7 +29,6 @@ func GetMenus(response http.ResponseWriter, request *http.Request) {
 	response.Header().Add("Content-Type", "application/json")
 
 	result, err := menuCollection.Find(context.TODO(), bson.M{})
-	fmt.Print(result)
 
 	defer cancel()
 	if err != nil {
@@ -155,6 +154,11 @@ func CreateMenu(response http.ResponseWriter, request *http.Request) {
 
 	var menu models.Menu
 	err := dec.Decode(&menu)
+
+	if v.Struct(&menu) != nil {
+		response.Write([]byte(fmt.Sprintf(v.Struct(&menu).Error())))
+		return
+	}
 
 	if PostPatchRequestValidator(response, request, err) {
 		menu.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
