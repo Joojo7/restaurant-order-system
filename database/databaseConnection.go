@@ -23,8 +23,6 @@ func DBinstance() *mongo.Client {
 	}
 	MongoDb := myEnv["MONGODB_URL"]
 
-	fmt.Println(MongoDb)
-
 	client, err := mongo.NewClient(options.Client().ApplyURI(MongoDb))
 	if err != nil {
 		log.Fatal(err)

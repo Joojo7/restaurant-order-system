@@ -19,6 +19,11 @@ import (
 	models "newapi.com/m/models"
 )
 
+type OrderItemPack struct {
+	Table_id    *string
+	Order_items []models.OrderItem
+}
+
 // connect to the database
 var v *validator.Validate = validator.New()
 
@@ -145,6 +150,12 @@ func UpdateOrderItem(response http.ResponseWriter, request *http.Request) {
 func CreateOrderItem(response http.ResponseWriter, request *http.Request) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
+	var orderItemPack OrderItemPack
+	var order models.Order
+
+	order.Order_Date, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+
+	orderItemsToBeInserted := []interface{}{}
 	//set response format to JSON
 	response.Header().Add("Content-Type", "application/json")
 
@@ -154,33 +165,44 @@ func CreateOrderItem(response http.ResponseWriter, request *http.Request) {
 	// call MaxRequestValidator to enforce a maximum read of 1MB .
 	dec := helpers.MaxRequestValidator(response, request)
 
-	var orderItem models.OrderItem
-	err1 := dec.Decode(&orderItem)
-
-	//validate body structure
-	if !helpers.PostPatchRequestValidator(response, request, err1) {
+	// var orderItem models.OrderItem
+	errOrderItemPack := dec.Decode(&orderItemPack)
+	//validate body structure of the order item pack
+	if !helpers.PostPatchRequestValidator(response, request, errOrderItemPack) {
 		return
 	}
 
-	//validate existence if request body
+	order.Table_id = orderItemPack.Table_id
+	order_id := OrderItemOrderCreator(order)
 
-	if v.Struct(&orderItem) != nil {
-		response.Write([]byte(fmt.Sprintf(v.Struct(&orderItem).Error())))
-		return
+	for _, orderItem := range orderItemPack.Order_items {
+		orderItem.Order_id = order_id
+
+		if v.Struct(&orderItem) != nil {
+			response.Write([]byte(fmt.Sprintf(v.Struct(&orderItem).Error())))
+			return
+		}
+		orderItem.ID = primitive.NewObjectID()
+		orderItem.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+		orderItem.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+		orderItem.Order_item_id = orderItem.ID.Hex()
+		var num = toFixed(*orderItem.Unit_price, 2)
+		orderItem.Unit_price = &num
+
+		orderItemsToBeInserted = append(orderItemsToBeInserted, orderItem)
 	}
+
+	//validate existence of request body
+
 	//validate body structure
 
-	orderItem.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-	orderItem.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-	orderItem.ID = primitive.NewObjectID()
-	orderItem.Order_item_id = orderItem.ID.Hex()
-	var num = toFixed(*orderItem.Unit_price, 2)
-	orderItem.Unit_price = &num
-
-	orderItemCollection.InsertOne(ctx, orderItem)
+	insertedOrderItems, err := orderItemCollection.InsertMany(ctx, orderItemsToBeInserted)
+	if err != nil {
+		log.Fatal(err)
+	}
 	defer cancel()
 
-	json.NewEncoder(response).Encode(orderItem)
+	json.NewEncoder(response).Encode(insertedOrderItems.InsertedIDs)
 
 	defer cancel()
 

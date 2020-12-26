@@ -19,13 +19,13 @@ import (
 )
 
 // connect to the database
+var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 //get orderCollection
 var orderCollection *mongo.Collection = database.OpenCollection(database.Client, "order")
 
 //GetOrders is the api used to get a multiple orders
 func GetOrders(response http.ResponseWriter, request *http.Request) {
-	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 	response.Header().Add("Content-Type", "application/json")
 
@@ -52,7 +52,6 @@ func GetOrders(response http.ResponseWriter, request *http.Request) {
 
 //GetOrder is the api used to tget a single order
 func GetOrder(response http.ResponseWriter, request *http.Request) {
-	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 	response.Header().Add("Content-Type", "application/json")
 
@@ -78,7 +77,6 @@ func GetOrder(response http.ResponseWriter, request *http.Request) {
 
 //UpdateOrder is used to update orders
 func UpdateOrder(response http.ResponseWriter, request *http.Request) {
-	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 	// check for content type existence and check for json validity
 	helpers.ContentTypeValidator(response, request)
@@ -131,7 +129,6 @@ func UpdateOrder(response http.ResponseWriter, request *http.Request) {
 
 //CreateOrder for creating orders
 func CreateOrder(response http.ResponseWriter, request *http.Request) {
-	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 	//set response format to JSON
 	response.Header().Add("Content-Type", "application/json")
@@ -163,9 +160,31 @@ func CreateOrder(response http.ResponseWriter, request *http.Request) {
 	order.Order_id = order.ID.Hex()
 
 	orderCollection.InsertOne(ctx, order)
+
 	defer cancel()
 
 	json.NewEncoder(response).Encode(order)
 	defer cancel()
+}
+
+//OrderItemOrderCreator is for creating orders for the order items
+func OrderItemOrderCreator(order models.Order) string {
+
+	//validate existence if request body
+
+	if v.Struct(&order) != nil {
+		msg := fmt.Sprintf("Error during order creation")
+		return msg
+	}
+
+	order.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+	order.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+	order.ID = primitive.NewObjectID()
+	order.Order_id = order.ID.Hex()
+
+	orderCollection.InsertOne(ctx, order)
+	defer cancel()
+
+	return order.Order_id
 
 }
