@@ -37,7 +37,6 @@ func GetOrderItems(response http.ResponseWriter, request *http.Request) {
 	response.Header().Add("Content-Type", "application/json")
 
 	result, err := orderItemCollection.Find(context.TODO(), bson.M{})
-	fmt.Print(result)
 
 	defer cancel()
 	if err != nil {
@@ -55,6 +54,69 @@ func GetOrderItems(response http.ResponseWriter, request *http.Request) {
 	json.NewEncoder(response).Encode(allOrderItems)
 
 	// response.Write(jsonBytes)
+}
+
+//GetOrderItems is the api used to get a multiple orderItems
+func GetOrderItemsByOrder(response http.ResponseWriter, request *http.Request) {
+
+	response.Header().Add("Content-Type", "application/json")
+
+	params := mux.Vars(request)
+
+	allOrderItems, err := ItemsByOrder(params["id"])
+
+	if err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		response.Write([]byte(err.Error()))
+	}
+
+	response.Header().Add("Content-Type", "application/json")
+	response.WriteHeader(http.StatusOK)
+
+	json.NewEncoder(response).Encode(allOrderItems)
+
+	// response.Write(jsonBytes)
+}
+
+func ItemsByOrder(id string) (OrderItems []primitive.M, err error) {
+	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+
+	matchStage := bson.D{{"$match", bson.D{{"order_id", id}}}}
+	lookupStage := bson.D{{"$lookup", bson.D{{"from", "food"}, {"localField", "food_id"}, {"foreignField", "food_id"}, {"as", "food"}}}}
+	unwindStage := bson.D{{"$unwind", bson.D{{"path", "$food"}, {"preserveNullAndEmptyArrays", true}}}}
+	projectStage := bson.D{
+		{"$project", bson.D{
+			{"_id", 0},
+			{"amount", "$food.price"},
+			{"total_count", 1},
+			{"food_name", "$food.name"},
+			{"food_image", "$food.food_image"},
+			{"price", "$food.price"},
+			{"quantity", 1},
+		}}}
+	groupStage := bson.D{{"$group", bson.D{{"_id", "$order_id"}, {"payment_due", bson.D{{"$sum", "$amount"}}}, {"total_count", bson.D{{"$sum", 1}}}, {"order_items", bson.D{{"$push", "$$ROOT"}}}}}}
+
+	projectStage2 := bson.D{
+		{"$project", bson.D{
+			{"_id", 0},
+			{"order_items", 1},
+			{"payment_due", 1},
+			{"total_count", 1},
+		}}}
+
+	result, err := orderItemCollection.Aggregate(ctx, mongo.Pipeline{matchStage, lookupStage, unwindStage, projectStage, groupStage, projectStage2})
+
+	if err != nil {
+		panic(err)
+	}
+
+	if err = result.All(ctx, &OrderItems); err != nil {
+		panic(err)
+	}
+
+	defer cancel()
+
+	return OrderItems, err
 }
 
 //GetOrderItem is the api used to tget a single orderItem

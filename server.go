@@ -26,6 +26,8 @@ func main() {
 	router.FoodRoutes(myRouter)
 	router.OrderItemRoutes(myRouter)
 	router.TableRoutes(myRouter)
+	router.InvoiceRoutes(myRouter)
+	router.OrderRoutes(myRouter)
 
 	fmt.Printf("listening on %v \n", port)
 	error1 := http.ListenAndServe(port, myRouter)

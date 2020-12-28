@@ -12,6 +12,7 @@ func OrderItemRoutes(incomingRoutes *mux.Router) {
 
 	incomingRoutes.HandleFunc("/orderItems", OrderItemController.GetOrderItems).Methods("GET")
 	incomingRoutes.HandleFunc("/orderItems/{id}", OrderItemController.GetOrderItem).Methods("GET")
+	incomingRoutes.HandleFunc("/orderItems-order/{id}", OrderItemController.GetOrderItemsByOrder).Methods("GET")
 	incomingRoutes.HandleFunc("/orderItems/{id}", OrderItemController.UpdateOrderItem).Methods("PATCH")
 	incomingRoutes.HandleFunc("/orderItems", OrderItemController.CreateOrderItem).Methods("POST")
 
