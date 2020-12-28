@@ -79,6 +79,8 @@ func GetOrderItemsByOrder(response http.ResponseWriter, request *http.Request) {
 }
 
 func ItemsByOrder(id string) (OrderItems []primitive.M, err error) {
+	fmt.Print(id)
+
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 	matchStage := bson.D{{"$match", bson.D{{"order_id", id}}}}

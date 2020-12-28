@@ -19,6 +19,10 @@ import (
 )
 
 // connect to the database
+type InvoiceViewFormat struct {
+	Table_id    *string
+	Order_items []models.OrderItem
+}
 
 //get invoiceCollection
 var invoiceCollection *mongo.Collection = database.OpenCollection(database.Client, "invoice")
@@ -69,9 +73,20 @@ func GetInvoice(response http.ResponseWriter, request *http.Request) {
 		response.Write([]byte(err.Error()))
 	}
 
-	response.Header().Add("Content-Type", "application/json")
+	allOrderItems, err := ItemsByOrder(invoice.Order_id)
 
-	json.NewEncoder(response).Encode(invoice)
+	if err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		response.Write([]byte(err.Error()))
+	}
+
+	//set response and response headers
+	response.Header().Add("Content-Type", "application/json")
+	response.WriteHeader(http.StatusOK)
+
+	json.NewEncoder(response).Encode(allOrderItems)
+
+	// json.NewEncoder(response).Encode(invoice)
 
 	// response.Write(jsonBytes)
 }

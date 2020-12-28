@@ -156,6 +156,17 @@ func CreateFood(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
+	var menu models.Menu
+
+	err := menuCollection.FindOne(ctx, bson.M{"menu_id": food.Menu_id}).Decode(&menu)
+	defer cancel()
+	if err != nil {
+		msg := fmt.Sprintf("message: Menu was not found")
+		response.WriteHeader(http.StatusNotFound)
+		response.Write([]byte(msg))
+		return
+	}
+
 	//validate existence if request body
 
 	if v.Struct(&food) != nil {
