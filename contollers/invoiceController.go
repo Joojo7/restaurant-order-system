@@ -20,8 +20,13 @@ import (
 
 // connect to the database
 type InvoiceViewFormat struct {
-	Table_id    *string
-	Order_items []models.OrderItem
+	Payment_method   string
+	Order_id         string
+	Payment_status   *string
+	Payment_due      interface{}
+	Table_number     interface{}
+	Payment_due_date time.Time
+	Order_details    interface{}
 }
 
 //get invoiceCollection
@@ -84,7 +89,22 @@ func GetInvoice(response http.ResponseWriter, request *http.Request) {
 	response.Header().Add("Content-Type", "application/json")
 	response.WriteHeader(http.StatusOK)
 
-	json.NewEncoder(response).Encode(allOrderItems)
+	var invoiceView InvoiceViewFormat
+
+	invoiceView.Order_id = invoice.Order_id
+	invoiceView.Payment_due_date = invoice.Payment_due_date
+
+	invoiceView.Payment_method = "null"
+	if invoice.Payment_method != nil {
+		invoiceView.Payment_method = *invoice.Payment_method
+	}
+
+	invoiceView.Payment_status = *&invoice.Payment_status
+	invoiceView.Payment_due = allOrderItems[0]["payment_due"]
+	invoiceView.Table_number = allOrderItems[0]["table_number"]
+	invoiceView.Order_details = allOrderItems[0]["order_items"]
+
+	json.NewEncoder(response).Encode(invoiceView)
 
 	// json.NewEncoder(response).Encode(invoice)
 
