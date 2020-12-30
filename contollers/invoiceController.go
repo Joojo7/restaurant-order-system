@@ -20,6 +20,7 @@ import (
 
 // connect to the database
 type InvoiceViewFormat struct {
+	Invoice_id       string
 	Payment_method   string
 	Order_id         string
 	Payment_status   *string
@@ -99,6 +100,7 @@ func GetInvoice(response http.ResponseWriter, request *http.Request) {
 		invoiceView.Payment_method = *invoice.Payment_method
 	}
 
+	invoiceView.Invoice_id = invoice.Invoice_id
 	invoiceView.Payment_status = *&invoice.Payment_status
 	invoiceView.Payment_due = allOrderItems[0]["payment_due"]
 	invoiceView.Table_number = allOrderItems[0]["table_number"]
@@ -130,12 +132,30 @@ func UpdateInvoice(response http.ResponseWriter, request *http.Request) {
 
 	var updateObj primitive.D
 
+	if invoice.Payment_method != nil {
+		updateObj = append(updateObj, bson.E{"payment_method", invoice.Payment_method})
+	}
+
+	if invoice.Payment_status != nil {
+		updateObj = append(updateObj, bson.E{"payment_status", invoice.Payment_status})
+	}
+
 	invoice.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 	updateObj = append(updateObj, bson.E{"updated_at", invoice.Updated_at})
 
 	upsert := true
 	opt := options.UpdateOptions{
 		Upsert: &upsert,
+	}
+
+	status := "PENDING"
+	if invoice.Payment_status == nil {
+		invoice.Payment_status = &status
+	}
+
+	if v.Struct(&invoice) != nil {
+		response.Write([]byte(fmt.Sprintf(v.Struct(&invoice).Error())))
+		return
 	}
 
 	result, err := invoiceCollection.UpdateOne(
