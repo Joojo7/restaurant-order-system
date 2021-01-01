@@ -19,8 +19,6 @@ import (
 	models "newapi.com/m/models"
 )
 
-// connect to the database
-
 //get foodCollection
 var foodCollection *mongo.Collection = database.OpenCollection(database.Client, "food")
 

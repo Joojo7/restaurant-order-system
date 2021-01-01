@@ -18,8 +18,6 @@ import (
 	models "newapi.com/m/models"
 )
 
-// connect to the database
-
 //get menuCollection
 var menuCollection *mongo.Collection = database.OpenCollection(database.Client, "menu")
 

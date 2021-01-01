@@ -18,7 +18,6 @@ import (
 	models "newapi.com/m/models"
 )
 
-// connect to the database
 type InvoiceViewFormat struct {
 	Invoice_id       string
 	Payment_method   string

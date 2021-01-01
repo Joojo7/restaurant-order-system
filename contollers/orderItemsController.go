@@ -24,7 +24,6 @@ type OrderItemPack struct {
 	Order_items []models.OrderItem
 }
 
-// connect to the database
 var v *validator.Validate = validator.New()
 
 //get orderItemCollection

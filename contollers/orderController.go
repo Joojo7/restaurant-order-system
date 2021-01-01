@@ -18,7 +18,6 @@ import (
 	models "newapi.com/m/models"
 )
 
-// connect to the database
 var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 //get orderCollection

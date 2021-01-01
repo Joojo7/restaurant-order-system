@@ -18,8 +18,6 @@ import (
 	models "newapi.com/m/models"
 )
 
-// connect to the database
-
 //get tableCollection
 var tableCollection *mongo.Collection = database.OpenCollection(database.Client, "table")
 
