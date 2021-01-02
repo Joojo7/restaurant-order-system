@@ -9,6 +9,8 @@ require (
 	github.com/golang/gddo v0.0.0-20201215222538-41221c318e83
 	github.com/gorilla/mux v1.8.0
 	github.com/joho/godotenv v1.3.0
+	github.com/kr/fs v0.1.0 // indirect
+	github.com/tools/godep v0.0.0-20180126220526-ce0bfadeb516 // indirect
 	go.mongodb.org/mongo-driver v1.4.3
 	gopkg.in/dealancer/validate.v2 v2.1.0 // indirect
 	gopkg.in/go-playground/validator.v9 v9.31.0

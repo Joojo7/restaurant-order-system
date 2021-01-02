@@ -48,10 +48,14 @@ github.com/klauspost/compress/huff0
 github.com/klauspost/compress/snappy
 github.com/klauspost/compress/zstd
 github.com/klauspost/compress/zstd/internal/xxhash
+# github.com/kr/fs v0.1.0
+## explicit
 # github.com/leodido/go-urn v1.1.0
 github.com/leodido/go-urn
 # github.com/pkg/errors v0.9.1
 github.com/pkg/errors
+# github.com/tools/godep v0.0.0-20180126220526-ce0bfadeb516
+## explicit
 # github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c
 github.com/xdg/scram
 # github.com/xdg/stringprep v0.0.0-20180714160509-73f8eece6fdc
