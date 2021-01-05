@@ -1,0 +1,12 @@
+{
+  "name": "Start on Heroku: Go",
+  "description": "Restaurant order managment system",
+  "keywords": [
+    "restaurant",
+    "go",
+    "food",
+    "order"
+  ],
+  "website": "https://github.com/Joojo7/restaurant-order-system",
+  "repository": "https://github.com/Joojo7/restaurant-order-system"
+}
