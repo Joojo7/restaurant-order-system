@@ -8,15 +8,15 @@ import (
 	"net/http"
 	"time"
 
+	database "github.com/Joojo7/restaurant-order-system/database"
+	helpers "github.com/Joojo7/restaurant-order-system/helpers"
+	models "github.com/Joojo7/restaurant-order-system/models"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"gopkg.in/go-playground/validator.v9"
-	database "newapi.com/m/database"
-	helpers "newapi.com/m/helpers"
-	models "newapi.com/m/models"
 )
 
 type OrderItemPack struct {

@@ -1,8 +1,8 @@
 package router
 
 import (
+	InvoiceController "github.com/Joojo7/restaurant-order-system/contollers"
 	"github.com/gorilla/mux"
-	InvoiceController "newapi.com/m/contollers"
 )
 
 //InvoiceRoutes function

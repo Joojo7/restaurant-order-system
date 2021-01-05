@@ -1,8 +1,8 @@
 package router
 
 import (
+	TableController "github.com/Joojo7/restaurant-order-system/contollers"
 	"github.com/gorilla/mux"
-	TableController "newapi.com/m/contollers"
 )
 
 //TableRoutes function

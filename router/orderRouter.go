@@ -1,8 +1,8 @@
 package router
 
 import (
+	OrderController "github.com/Joojo7/restaurant-order-system/contollers"
 	"github.com/gorilla/mux"
-	OrderController "newapi.com/m/contollers"
 )
 
 //OrderRoutes function

@@ -5,9 +5,9 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/Joojo7/restaurant-order-system/router"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
-	"newapi.com/m/router"
 )
 
 var MyEnv map[string]string

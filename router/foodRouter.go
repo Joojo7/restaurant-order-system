@@ -1,8 +1,8 @@
 package router
 
 import (
+	FoodController "github.com/Joojo7/restaurant-order-system/contollers"
 	"github.com/gorilla/mux"
-	FoodController "newapi.com/m/contollers"
 )
 
 //FoodRoutes function
