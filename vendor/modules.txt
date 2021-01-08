@@ -22,9 +22,7 @@ github.com/go-playground/locales/currency
 # github.com/go-playground/universal-translator v0.17.0
 ## explicit
 github.com/go-playground/universal-translator
-# github.com/go-playground/validator v9.31.0+incompatible
 ## explicit
-github.com/go-playground/validator
 # github.com/go-stack/stack v1.8.0
 github.com/go-stack/stack
 # github.com/golang/gddo v0.0.0-20201215222538-41221c318e83
@@ -46,7 +44,7 @@ github.com/klauspost/compress/huff0
 github.com/klauspost/compress/snappy
 github.com/klauspost/compress/zstd
 github.com/klauspost/compress/zstd/internal/xxhash
-# github.com/leodido/go-urn v1.1.0
+# github.com/leodido/go-urn v1.2.1
 ## explicit
 github.com/leodido/go-urn
 # github.com/pkg/errors v0.9.1
@@ -100,6 +98,3 @@ golang.org/x/text/transform
 golang.org/x/text/unicode/norm
 # gopkg.in/go-playground/assert.v1 v1.2.1
 ## explicit
-# gopkg.in/go-playground/validator.v9 v9.31.0
-## explicit
-gopkg.in/go-playground/validator.v9

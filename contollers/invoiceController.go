@@ -152,11 +152,6 @@ func UpdateInvoice(response http.ResponseWriter, request *http.Request) {
 		invoice.Payment_status = &status
 	}
 
-	if v.Struct(&invoice) != nil {
-		response.Write([]byte(fmt.Sprintf(v.Struct(&invoice).Error())))
-		return
-	}
-
 	result, err := invoiceCollection.UpdateOne(
 		ctx,
 		filter,
@@ -221,13 +216,6 @@ func CreateInvoice(response http.ResponseWriter, request *http.Request) {
 	invoice.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 	invoice.ID = primitive.NewObjectID()
 	invoice.Invoice_id = invoice.ID.Hex()
-
-	//validate existence if request body
-
-	if v.Struct(&invoice) != nil {
-		response.Write([]byte(fmt.Sprintf(v.Struct(&invoice).Error())))
-		return
-	}
 
 	// var num = toFixed(*invoice.Payment_due, 2)
 	// invoice.Payment_due = &num

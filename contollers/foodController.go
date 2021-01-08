@@ -165,13 +165,6 @@ func CreateFood(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	//validate existence if request body
-
-	if v.Struct(&food) != nil {
-		response.Write([]byte(fmt.Sprintf(v.Struct(&food).Error())))
-		return
-	}
-
 	food.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 	food.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 	food.ID = primitive.NewObjectID()

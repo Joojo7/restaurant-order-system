@@ -146,13 +146,6 @@ func CreateOrder(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	//validate existence if request body
-
-	if v.Struct(&order) != nil {
-		response.Write([]byte(fmt.Sprintf(v.Struct(&order).Error())))
-		return
-	}
-
 	order.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 	order.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 	order.ID = primitive.NewObjectID()
@@ -168,13 +161,6 @@ func CreateOrder(response http.ResponseWriter, request *http.Request) {
 
 //OrderItemOrderCreator is for creating orders for the order items
 func OrderItemOrderCreator(order models.Order) string {
-
-	//validate existence if request body
-
-	if v.Struct(&order) != nil {
-		msg := fmt.Sprintf("Error during order creation")
-		return msg
-	}
 
 	order.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 	order.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))

@@ -10,11 +10,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/go-playground/validator"
 	"github.com/golang/gddo/httputil/header"
 )
-
-var v *validator.Validate = validator.New()
 
 //PostPatchRequestValidator for creating menus
 func PostPatchRequestValidator(response http.ResponseWriter, request *http.Request, err error) bool {

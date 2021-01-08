@@ -3,7 +3,6 @@ package controller
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -16,15 +15,12 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"gopkg.in/go-playground/validator.v9"
 )
 
 type OrderItemPack struct {
 	Table_id    *string
 	Order_items []models.OrderItem
 }
-
-var v *validator.Validate = validator.New()
 
 //get orderItemCollection
 var orderItemCollection *mongo.Collection = database.OpenCollection(database.Client, "orderItem")
@@ -260,10 +256,6 @@ func CreateOrderItem(response http.ResponseWriter, request *http.Request) {
 	for _, orderItem := range orderItemPack.Order_items {
 		orderItem.Order_id = order_id
 
-		if v.Struct(&orderItem) != nil {
-			response.Write([]byte(fmt.Sprintf(v.Struct(&orderItem).Error())))
-			return
-		}
 		orderItem.ID = primitive.NewObjectID()
 		orderItem.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 		orderItem.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))

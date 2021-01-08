@@ -3,7 +3,6 @@ package controller
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -152,13 +151,6 @@ func CreateTable(response http.ResponseWriter, request *http.Request) {
 
 	//validate body structure
 	if !helpers.PostPatchRequestValidator(response, request, err1) {
-		return
-	}
-
-	//validate existence if request body
-
-	if v.Struct(&table) != nil {
-		response.Write([]byte(fmt.Sprintf(v.Struct(&table).Error())))
 		return
 	}
 
